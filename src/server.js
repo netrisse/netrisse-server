@@ -1,5 +1,5 @@
 const WebSocket = require('ws');
-const { Message, messageTypeEnum } = require('netrisse-lib');
+const { debug, Message, messageTypeEnum } = require('netrisse-lib');
 const { games } = require('./common');
 const handleError = require('./handle-error');
 const sendMessage = require('./send-message');
@@ -12,7 +12,9 @@ const port = 4752;
 const server = new WebSocket.Server({ clientTracking: false, port }, () => {
   if (process.send) { process.send('ready'); }
 
-  console.log(`netrisse server is listening on port ${port}`);
+  const message = `netrisse server is listening on port ${port}`;
+  debug(message);
+  console.log(message);
 });
 
 const statusCodeEnum = Object.freeze({ PLAYER_QUIT: 4333 });
@@ -29,6 +31,9 @@ server.on('connection', socket => {
     try {
       if (code === statusCodeEnum.PLAYER_QUIT) {
         handleMessage(socket, rawData);
+      }
+      else {
+        debug(`ws closed -- code: ${code}, data: ${rawData}`);
       }
     }
     catch (error) {
@@ -51,13 +56,15 @@ const purgeIntervalID = setInterval(function purgeStaleGames() {
     const diff = Date.now() - game.heartbeat;
 
     if (diff >= FIVE_MINUTES_MS) {
-      // console.log(`deleting stale game ${gameID}`);
+      const message = `deleting stale game ${gameID}`;
+      debug(message);
+      console.log(message);
 
       // send game over
       // make sure we wait for it to complete sending, so we don't call socket.close() before the message can be received
-      sendMessage(gameID, null, new Message(messageTypeEnum.GAME_OVER).serialize()).then(() => {
+      sendMessage(gameID, null, true, new Message(messageTypeEnum.GAME_OVER).serialize()).then(() => {
         for (const playerID of Object.keys(game.players)) {
-          game.players[playerID].socket.close();
+          game.players[playerID].socket.close(4334, 'game is stale'); // todo: make enum for close codes
         }
 
         delete games[gameID];
@@ -71,22 +78,24 @@ process.on('SIGTERM', shutdown);
 
 function shutdown() {
   clearInterval(purgeIntervalID);
-  server.close();
 
   for (const g of Object.values(games)) {
     for (const p of Object.values(g.players)) {
-      p.socket.close();
+      p.socket.close(4335, 'server shutdown'); // todo: make enum for close codes
     }
   }
+
+  server.close();
 }
 
 function handleMessage(socket, rawData) {
-  const message = JSON.parse(rawData);
-
-  // console.log(message);
+  // debug(rawData);  // client debug log already shows this
+  const message = Message.deserialize(rawData);
 
   if (!arrMessageTypes.includes(message.type)) {
-    throw new Error(`unsupported message type: ${message.type}`);
+    const err = `unsupported message type: ${message.type}`;
+    debug(err);
+    throw new Error(err);
   }
 
   const handler = messageHandlers[message.type];

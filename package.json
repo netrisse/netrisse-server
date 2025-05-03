@@ -2,9 +2,10 @@
   "name": "netrisse-server",
   "version": "0.1.0",
   "description": "server to support multiplayer netrisse",
-  "main": "src/server.js",
+  "main": "./src/server.js",
   "scripts": {
     "circles": "madge --extensions js --circular src",
+    "debug": "DEBUG=true npm run serve",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "serve": "node src/server.js",

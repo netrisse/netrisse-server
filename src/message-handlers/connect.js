@@ -1,6 +1,7 @@
 const Player = require('../player');
 const { messageTypeEnum } = require('netrisse-lib');
 const { games } = require('../common');
+const sendMessage = require('../send-message');
 
 module.exports = function({ socket, message }) {
   let game = games[message.gameID];
@@ -13,11 +14,14 @@ module.exports = function({ socket, message }) {
   socket.send(JSON.stringify({ type: messageTypeEnum.SEED, seed: game.seed }));
 
   // replace existing player if they exist; this is a new connection
-  game.players[message.playerID] = new Player(message.playerID, socket);
+  game.players[message.playerID] = new Player(message.playerID, socket, message.playerName);
 
-  const playerIDs = Object.keys(game.players);
-
-  for (const playerID of playerIDs) {
-    game.players[playerID].socket.send(JSON.stringify({ type: messageTypeEnum.CONNECT, players: playerIDs }));
-  }
+  sendMessage(
+    message.gameID,
+    null, // send null for playerID -- message is coming from the server itself
+    JSON.stringify(
+      {
+        type: messageTypeEnum.CONNECT,
+        players: Object.values(game.players).map(({ playerID, playerName }) => ({ playerID, playerName })),
+      }));
 };
