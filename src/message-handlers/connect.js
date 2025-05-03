@@ -11,6 +11,10 @@ module.exports = function({ socket, message }) {
     games[message.gameID] = game;
   }
 
+  if (Object.keys(game.players).length >= 7) {
+    throw new Error('player limit is seven');
+  }
+
   socket.send(JSON.stringify({ type: messageTypeEnum.SEED, seed: game.seed }));
 
   // replace existing player if they exist; this is a new connection
