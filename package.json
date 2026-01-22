@@ -22,16 +22,16 @@
   },
   "homepage": "https://github.com/ctcpip/netrisse-server#readme",
   "devDependencies": {
-    "eslint": "^9.4.0",
-    "eslint-config-ultra-mega": "^1.2.0",
-    "madge": "^7.0.0"
+    "eslint": "^9.39.2",
+    "eslint-config-ultra-mega": "^2.1.0",
+    "madge": "^8.0.0"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "netrisse-lib": "^2.0.0",
-    "ws": "^8.17.0"
+    "ws": "^8.19.0"
   },
   "keywords": [
     "netris",
